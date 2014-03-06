@@ -4,10 +4,8 @@ import Control.Applicative
 import Data.Char
 import Text.Ponder
 
--- 一桁の数字
 numChar = oneOf ['0'..'9']
 
--- 正の整数の文字列
 nNumStr :: Parser String
 nNumStr = do a <- numChar
 	     if a == '0'
@@ -18,28 +16,21 @@ nNumStr = do a <- numChar
 		  do b <- many $ numChar
 	       	     return (a:b)
 
--- 正の小数の文字列
 dNumStr :: Parser String
 dNumStr = do a <- nNumStr <|> string "0"
 	     b <- string "."
 	     c <- some $ numChar
              return (a ++ b ++ c)
 
--- 実数の文字列
 numStr :: Parser String
-numStr = (++) <$> (string "-" <|> pure []) <*> (dNumStr <|> nNumStr)
+numStr = (++) <$> (string "-" <|> pure []) <*> (dNumStr <|> nNumStr) -- optional?
 
--- 数字列(String)を数(Double)に変換するパーサー
 num :: Parser Double
-num = numStr >>= \x -> StateT $ \xs-> return (read x,xs) 
+num = numStr >>= \x -> StateT $ \xs-> return (read x, xs) 
 
 
--- 四則演算パーサー、()付き四則演算を行う
--- 数式(String)を計算結果(Double)に加工
 calc :: Parser Double
-calc = do e <- expr
-       	  notP item
-	  return e
+calc = expr <* notP item
 
 expr :: Parser Double
 expr = do t <- term
@@ -60,12 +51,8 @@ term = do f <- factor
 	       	      	 return (f * t) 
 	       '/' -> do t <- term
 	       	      	 return (f / t) 
-	       _   -> StateT $ \_-> mzero
+--	       _   -> StateT $ \_-> mzero -- should not use StateT
              <|> return f
 
 factor :: Parser Double
-factor = do char '('
-       	    e <- expr
-	    char ')'
-	    return e 
-	 <|> num
+factor = char '(' *> expr <* char ')' <|> num
