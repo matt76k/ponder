@@ -16,5 +16,5 @@ andP p = StateT $ \s -> (runStateT p s) >> return ((), s)
 notP :: (Monad m, Error e) => ParserT s e m a -> ParserT s e m ()
 notP p = StateT $ \s -> ErrorT $ do a <- runErrorT (runStateT p s)
                                     case a of
-                                      Left _ -> return $ Right ((), s)
+                                      Left _  -> return $ Right ((), s)
                                       Right _ -> return mzero
