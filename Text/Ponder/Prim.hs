@@ -1,18 +1,32 @@
 module Text.Ponder.Prim
 ( ParserT(..)
+, (<|>)
+, many
+, many1
+, option
 , andP
 , notP
-, option
 ) where
 
 import Control.Monad
 import Control.Monad.State
-import Control.Monad.Error
-import Control.Applicative
+import Control.Monad.Trans.Error
+import qualified Control.Applicative as Applicative ( Applicative(..), Alternative(..) )
 
 type ParserT s e m a = StateT s (ErrorT e m) a
 
-option :: (Monad m, Functor m, Error e) => a -> ParserT s e m a -> ParserT s e m a
+infixr 1 <|>
+
+(<|>) :: (Functor m, Monad m, Error e) => (ParserT s e m a) -> (ParserT s e m a) -> (ParserT s e m a)
+p1 <|> p2 = mplus p1 p2
+
+many :: (Functor m, Monad m, Error e) => ParserT s e m a -> ParserT s e m [a]
+many p = Applicative.many p
+
+many1 :: (Functor m, Monad m, Error e) => ParserT s e m a -> ParserT s e m [a]
+many1 p = Applicative.some p
+
+option :: (Functor m, Monad m, Error e) => a -> ParserT s e m a -> ParserT s e m a
 option a p = p <|> return a
 
 andP :: Monad m => StateT s m a -> StateT s m ()
