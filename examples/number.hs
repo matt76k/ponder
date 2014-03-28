@@ -8,7 +8,7 @@ digit0 = (0/digit)
 
 zero   = (0,digit0!)
 
-num    = (zero/-?pNum)
+num    = (-?,pNum/zero)
 pNum   = (dNum/nNum,!.)
 dNum   = ((nNum/zero),.,dPart)
 dPart  = ((digit0,dPart)/(digit+,!0))
@@ -28,17 +28,14 @@ nNum = do a <- digit
           return (a:b)
 
 -- 正の小数
-dNum = do a <- (nNum <|> zero)
-          b <- string "."
-          c <- dPart
-          return (a ++ b ++ c)
+dNum = (nNum <|> zero) `seqP` string "." `seqP` dPart
   where dPart = (:) <$> digit0 <*> dPart <|> (many1 digit) <* notP (char '0') -- 小数部
 
 -- 正数
 pNum = dNum <|> nNum <* notP (char '.')
 
 -- 実数
-num = zero <|> (++) <$> option "" (string "-") <*> pNum
+num = (option "" (string "-") `seqP` pNum) <|> zero
 
 
 number :: Parser Double
