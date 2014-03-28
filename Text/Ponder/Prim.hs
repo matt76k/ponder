@@ -1,5 +1,6 @@
 module Text.Ponder.Prim
 ( ParserT(..)
+, seqP
 , (<|>)
 , many
 , many1
@@ -16,6 +17,11 @@ import qualified Control.Applicative as Applicative ( Applicative(..), Alternati
 type ParserT s e m a = StateT s (ErrorT e m) a
 
 infixr 1 <|>
+
+seqP :: (Functor m, Monad m, Error e) => ParserT s e m [a] -> ParserT s e m [a] -> ParserT s e m [a]
+seqP p1 p2 = do p <- p1
+                q <- p2
+                return (p ++ q)
 
 (<|>) :: (Functor m, Monad m, Error e) => (ParserT s e m a) -> (ParserT s e m a) -> (ParserT s e m a)
 p1 <|> p2 = mplus p1 p2
