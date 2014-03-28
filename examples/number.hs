@@ -23,9 +23,7 @@ digit0 = char '0' <|> digit
 zero = string "0" <* notP digit0
 
 -- 自然数
-nNum = do a <- digit 
-          b <- many digit0
-          return (a:b)
+nNum = (:) <$> digit <*> (many digit0)
 
 -- 正の小数
 dNum = (nNum <|> zero) `seqP` string "." `seqP` dPart
