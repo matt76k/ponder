@@ -1,58 +1,53 @@
 import Control.Monad
-import Control.Monad.State
-import Control.Applicative
-import Data.Char
+import Control.Applicative ( (<$>), (<*>), (<*) )
 import Text.Ponder
 
-numChar = oneOf ['0'..'9']
+-- 非零数字,数字
+digit = oneOf ['1'..'9']
+digit0 = char '0' <|> digit
 
-nNumStr :: Parser String
-nNumStr = do a <- numChar
-	     if a == '0'
-	     	then 
-		  do notP $ numChar
-		     return "0"
-	       	else 
-		  do b <- many $ numChar
-	       	     return (a:b)
+-- 零
+zero = string "0" <* notP digit0
 
-dNumStr :: Parser String
-dNumStr = do a <- nNumStr <|> string "0"
-	     b <- string "."
-	     c <- some $ numChar
-             return (a ++ b ++ c)
+-- 自然数
+nNum = (:) <$> digit <*> (many digit0)
 
-numStr :: Parser String
-numStr = (++) <$> (string "-" <|> pure []) <*> (dNumStr <|> nNumStr) -- optional?
+-- 正の小数
+dNum = (nNum <|> zero) `seqP` string "." `seqP` dPart
+  where dPart = (:) <$> digit0 <*> dPart <|> (many1 digit) <* notP (char '0') -- 小数部
 
-num :: Parser Double
-num = numStr >>= \x -> StateT $ \xs-> return (read x, xs) 
+-- 正数
+pNum = dNum <|> nNum <* notP (char '.')
+
+-- 実数
+num = (option "" (string "-") `seqP` pNum) <|> zero
 
 
-calc :: Parser Double
-calc = expr <* notP item
+-- Double型の数で結果を返すパーサー
+number :: Parser Double
+number = do n <- num
+            return (read n)
 
-expr :: Parser Double
-expr = do t <- term
-       	  do s <- item
-	     case s of 
-	       '+' -> do e <- expr
-	       	      	 return (t + e) 
-	       '-' -> do e <- expr
-	       	      	 return (t - e)
-	       _   ->  StateT $ \_-> mzero
-             <|> return t
+blank = many $ oneOf [' ','\t']
 
-term :: Parser Double
-term = do f <- factor
-       	  do s <- item
-	     case s of 
-	       '*' -> do t <- term
-	       	      	 return (f * t) 
-	       '/' -> do t <- term
-	       	      	 return (f / t) 
---	       _   -> StateT $ \_-> mzero -- should not use StateT
-             <|> return f
+block = do string "(" `seqP` blank
+           e <- expr
+           blank `seqP` string ")"
+           return e
 
-factor :: Parser Double
-factor = char '(' *> expr <* char ')' <|> num
+blockOrNum = number <|> block
+
+addP = do val1 <- mulOrNum
+          blank `seqP` string "+" `seqP` blank
+          val2 <- expr
+          return (val1 + val2)
+
+mulP = do val1 <- blockOrNum
+          blank `seqP` string "*" `seqP` blank
+          val2 <- mulOrNum
+          return (val1 * val2)
+
+mulOrNum = mulP <|> blockOrNum
+
+-- ()付きの加法と乗法を行うパーサー
+expr = addP <|> mulOrNum
