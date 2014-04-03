@@ -14,7 +14,9 @@ import Control.Monad.State
 import Control.Monad.Trans.Error
 import qualified Control.Applicative as Applicative ( Applicative(..), Alternative(..) )
 
-type ParserT s e m a = StateT s (ErrorT e m) a
+import Text.Ponder.Pos
+
+type ParserT s e m a = StateT s (ErrorT e (StateT SourcePos m)) a
 
 infixr 1 <|>
 

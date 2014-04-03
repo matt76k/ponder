@@ -13,10 +13,12 @@ import Control.Monad.State
 import Control.Monad.Error
 import Control.Monad.Identity
 import Control.Applicative
+
 import Text.Ponder.Prim
+import Text.Ponder.Pos
 
 type Parser a = ParserT String String Identity a
-parse p s = runIdentity . runErrorT . runStateT p $ s
+parse p s = runIdentity $ runStateT (runErrorT . runStateT p $ s) (initialPos "")
 
 item :: Parser Char
 item = StateT $ \s -> case s of
