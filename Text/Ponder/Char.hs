@@ -18,17 +18,20 @@ import Text.Ponder.Prim
 import Text.Ponder.Pos
 
 type Parser a = ParserT String String Identity a
-parse p s = runIdentity $ runStateT (runErrorT . runStateT p $ s) (initialPos "")
+parse p s = runIdentity . runErrorT $ runStateT (runStateT p s) $ initialPos ""
 
 item :: Parser Char
-item = StateT $ \s -> case s of
-                        c:cs -> return (c, cs)
-                        otherwise -> mzero
+item = StateT $ \s -> case s of c:cs -> do p <- get
+                                           put $ updatePosChar p
+                                           return (c, cs)
+                                otherwise -> throwError "end of input"
 
 satisfy :: (Char -> Bool) -> Parser Char
 satisfy f = do c <- item
-               if f c then return c
-                      else mzero
+               if f c then StateT $ \s -> return (c,s)
+                      else StateT $ \s -> do p <- get
+                                             put $ backPosChar p
+                                             throwError "not match"
 
 char :: Char -> Parser Char
 char c = satisfy (c==)
