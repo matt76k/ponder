@@ -18,7 +18,9 @@ import Text.Ponder.Prim
 import Text.Ponder.Pos
 
 type Parser a = ParserT String String Identity a
-parse p s = runIdentity . runErrorT $ runStateT (runStateT p s) $ initialPos ""
+
+parse :: Parser a -> String -> Either String ((a, String), SourcePos)
+parse p s = runIdentity $ evalStateT (runErrorT $ runStateT (runStateT p s) $ initialPos "") []
 
 item :: Parser Char
 item = StateT $ \s -> case s of c:cs -> do p <- get
