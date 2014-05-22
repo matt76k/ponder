@@ -5,4 +5,3 @@ module Text.Ponder
 
 import Text.Ponder.Prim
 import Text.Ponder.Char
-import Text.Ponder.Pos

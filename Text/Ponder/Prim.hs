@@ -1,5 +1,7 @@
 module Text.Ponder.Prim
 ( ParserT(..)
+, Pos
+, Memo
 , seqP
 , (<|>)
 , many
@@ -14,11 +16,11 @@ import Control.Monad.State
 import Control.Monad.Trans.Error
 import qualified Control.Applicative as Applicative ( Applicative(..), Alternative(..) )
 
-import Text.Ponder.Pos
+type Pos = Int
 
-type Memo = [(Column, String)]
+type Memo = [((String,Pos),Pos)]
 
-type ParserT s e m a = StateT s (StateT SourcePos (ErrorT String (StateT Memo m))) a
+type ParserT s e m a = StateT s (StateT Pos (ErrorT String (StateT Memo m))) a
 
 
 infixr 1 <|>
